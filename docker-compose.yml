@@ -1,0 +1,30 @@
+services:
+  whatsapp-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp_personal_scheduler
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - DATA_DIR=/app/data
+      - TIMEZONE=Asia/Karachi
+      - CHECK_INTERVAL_SECONDS=15
+      - OVERDUE_WINDOW_MINUTES=15
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      - PUPPETEER_HEADLESS=true
+      - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD:-ChangeThisPasswordImmediately!}
+      - SESSION_SECRET=${SESSION_SECRET:-replace_with_a_secure_random_session_secret_12345}
+    volumes:
+      # Mount persistent volume to retain SQLite DB and WhatsApp session tokens
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/session', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
